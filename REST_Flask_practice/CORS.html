@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Web API Client</title>
+  </head>
+  <body>
+    <script>
+      fetch("http://localhost:5000/")
+        .then(responce => {
+          return responce.json();
+        })
+        .then(json => {
+          document.getElementById("msg").innerHTML = JSON.stringify(
+            json.message
+          );
+        });
+    </script>
+    <h1><div id="msg"></div></h1>
+  </body>
+</html>
