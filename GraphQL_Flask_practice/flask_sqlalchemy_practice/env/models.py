@@ -3,8 +3,11 @@ from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 
 from sqlalchemy.ext.declarative import declarative_base
 
-# データベースへの接続。echo部分を書いておくと発行されるSQL文をログに吐く
-engine = create_engine("sqlite:///database.sqlite3", convert_unicode=True, echo=True)
+# データベースエンジン作成とセッション作成。echo=Trueで発行されるSQL文をログに吐く
+# ここの1行を書き換えるだけでMySQLやSQLiteなどのDBに切り替えることができる。
+engine = create_engine(
+    "postgresql+psycopg2://postgres:root@localhost:5432/graphql_graphene_flask_sqlalchemy_psycopg2_practice", echo=True
+)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
 )
@@ -13,7 +16,7 @@ db_session = scoped_session(
 Base = declarative_base()
 Base.query = db_session.query_property()
 
-# テーブル定義
+# テーブル定義用クラス
 class Department(Base):
     __tablename__ = "department"
     id = Column(Integer, primary_key=True)

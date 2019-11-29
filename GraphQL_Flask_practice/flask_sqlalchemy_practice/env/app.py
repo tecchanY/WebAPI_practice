@@ -12,6 +12,7 @@ from schema import schema, Department
 app = Flask(__name__)
 app.debug = True
 
+# apiと対話するための唯一のエンドポイント（URL）を指定
 app.add_url_rule(
     "/graphql", view_func=GraphQLView.as_view("/graphql", schema=schema, graphiql=True)
 )
@@ -23,5 +24,5 @@ def shutdown_session(exception=None):
 
 
 # おまじない
-if __name__ == "__name__":
-    app.run
+if __name__ == "__main__":
+    app.run()
