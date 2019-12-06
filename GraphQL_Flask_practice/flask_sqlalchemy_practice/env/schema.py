@@ -1,5 +1,5 @@
 import graphene
-from graphene import relay
+from graphene import relay, Mutation, ID, String
 from graphene_sqlalchemy import SQLAlchemyObjectType, SQLAlchemyConnectionField
 from models import db_session, Department as DepartmentModel, Employee as EmployeeModel
 
@@ -12,13 +12,15 @@ from models import db_session, Department as DepartmentModel, Employee as Employ
 
 # SQLAlchemyObjectTypeを継承したクラスDepartmentとEmployeeでスキーマ定義
 # SQLAlchemyObjectTypeとrelay.Connectionを継承したクラスを定義
+
+# クラスにはフィールドとフィールドのリゾルバ関数を実装
 class Department(SQLAlchemyObjectType):
     class Meta:
         model = DepartmentModel
         interfaces = (relay.Node,)
 
 
-class DepartmentConnection(relay.Connection):
+class DepartmentGQLConnection(relay.Connection):
     class Meta:
         node = Department
 
@@ -34,12 +36,34 @@ class EmployeeGQLConnection(relay.Connection):
         node = Employee
 
 
+class CreateDepartment(graphene.Mutation):
+    # created_id, created_nameが戻り値
+    created_id = ID()
+    created_name = String()
+
+    class Arguments:
+        # nameがString型のフィールドで引数
+        name = String()
+
+    # nameフィールドのリゾルバ関数
+    # mutateメソッドの引数はself, infoの次に引数が並ぶ
+    def mutate(self, info, name):
+        # ここで永続化
+
+        # Mutationを継承したクラスをインスタンス化して返す
+        return CreateDepartment(created_id=1, created_name=name)
+
+
+class MyMutation(graphene.ObjectType):
+    create_department = CreateDepartment.Field()
+
+
 # 定義したメタクラスによってインスタンス化したものを各変数に格納？
 class Query(graphene.ObjectType):
     node = relay.Node.Field()
     all_employees = SQLAlchemyConnectionField(EmployeeGQLConnection)
-    all_departments = SQLAlchemyConnectionField(DepartmentConnection, sort=None)
+    all_departments = SQLAlchemyConnectionField(DepartmentGQLConnection, sort=None)
 
 
 # 定義したスキーマであるクラスQueryをSchemaオブジェクトにセット
-schema = graphene.Schema(query=Query)
+schema = graphene.Schema(query=Query, mutation=MyMutation)
