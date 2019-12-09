@@ -37,21 +37,28 @@ class EmployeeGQLConnection(relay.Connection):
 
 
 class CreateDepartment(graphene.Mutation):
-    # created_id, created_nameが戻り値
-    created_id = ID()
-    created_name = String()
+    # id, nameが戻り値(レスポンス)
+    # Inputを書いてるのと同じ
+    id = ID()
+    name = String()
 
     class Arguments:
-        # nameがString型のフィールドで引数
+        # nameがString型のフィールドで、サーバーに送信するクエリにおけるDepartmentの引数
         name = String()
+
+    # department = graphene.Field(lambda: Department)
 
     # nameフィールドのリゾルバ関数
     # mutateメソッドの引数はself, infoの次に引数が並ぶ
     def mutate(self, info, name):
         # ここで永続化
 
+        department = Department(name=name)
+        # department.insert()
+
         # Mutationを継承したクラスをインスタンス化して返す
-        return CreateDepartment(created_id=1, created_name=name)
+        return CreateDepartment(id=department.id, name=department.name)
+        # return CreateDepartment(department=department)
 
 
 class MyMutation(graphene.ObjectType):

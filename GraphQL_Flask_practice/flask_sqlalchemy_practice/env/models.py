@@ -4,11 +4,17 @@ from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 # データベースエンジン作成とセッション作成。echo=Trueで発行されるSQL文をログに吐く
-# ここの1行を書き換えるだけでMySQLやSQLiteなどのDBに切り替えることができる。
+# ここの1行を書き換えるだけでMySQLやPostgreSQL、SQLiteなどのDBに切り替えることができる。
+# dbの接続条件を変えて複数接続してパーティショニングすることもできる
 engine = create_engine(
     "postgresql+psycopg2://postgres:root@localhost:5432/graphql_graphene_flask_sqlalchemy_psycopg2_practice",
     echo=True,
 )
+# autoflushはデフォルトでtrue
+# falseだとsession.commit()しないとadd, update, deleteされない
+# rollbackすることで、次のSQLから新規トランザクション開始
+
+# scoped_sessionは同じスレッドで何度Session()コンストラクタを呼び出しても同じSessionインスタンスが返ってくる
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
 )
@@ -37,3 +43,30 @@ class Employee(Base):
     department = relationship(
         Department, backref=backref("employees", uselist=True, cascade="delete,all")
     )
+
+
+# database.pyとして分離してもOK
+def init_db():
+    # メタデータに適切に登録されるように、モデルを定義する可能性のあるすべてのモジュールを
+    # ここにインポートします。さもないとinit db（）を呼び出す前に、まずそれらをインポートする必要があります
+    from models import Department, Employee
+
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+    # オブジェクトを代入した変数をsessionにadd
+    # scoped_session() の返すオブジェクトには、Sessionのほとんどのメソッドやプロパティが「クラス」レベルで実装されているので、
+    # Session()をインスタンス化する必要はない
+    engineering = Department(name="Engineering")
+    db_session.add(engineering)
+    hr = Department(name="Human Resources")
+    db_session.add(hr)
+
+    peter = Employee(name="Peter", department=engineering)
+    db_session.add(peter)
+    roy = Employee(name="Roy", department=engineering)
+    db_session.add(roy)
+    tracy = Employee(name="Tracy", department=hr)
+    db_session.add(tracy)
+
+    db_session.commit()
