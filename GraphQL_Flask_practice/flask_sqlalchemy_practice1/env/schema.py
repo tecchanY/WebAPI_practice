@@ -44,16 +44,18 @@ class CreateDepartment(graphene.Mutation):
 
     class Arguments:
         # nameがString型のフィールドで、サーバーに送信するクエリにおけるDepartmentの引数
+        id = ID()
         name = String()
 
     # department = graphene.Field(lambda: Department)
 
     # nameフィールドのリゾルバ関数
     # mutateメソッドの引数はself, infoの次に引数が並ぶ
-    def mutate(self, info, name):
+    def mutate(self, info, id, name):
         # ここで永続化
+        # ↑これはsqlite3でインメモリに保存してる場合の話？
 
-        department = Department(name=name)
+        department = Department(id=id, name=name)
         # department.insert()
 
         # Mutationを継承したクラスをインスタンス化して返す
@@ -63,6 +65,7 @@ class CreateDepartment(graphene.Mutation):
 
 class MyMutation(graphene.ObjectType):
     create_department = CreateDepartment.Field()
+    db_session.commit()
 
 
 # 定義したメタクラスによってインスタンス化したものを各変数に格納？

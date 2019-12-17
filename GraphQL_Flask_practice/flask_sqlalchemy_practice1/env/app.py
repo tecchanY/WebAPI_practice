@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_graphql import GraphQLView
 
-from models import db_session, init_db
+from models import db_session
 from schema import schema
 
 # 今回のファイル構成ではコマンドラインから直接このファイルが呼ばれるのではなく、
@@ -36,11 +36,16 @@ app.add_url_rule(
 
 # フォーカスすると表示される説明によると、@app.teardown_appcontextはアプリケーション終了時の処理を書くときに必要なアノテーションっぽい。
 @app.teardown_appcontext
-def shutdown_session(exception=None):
-    db_session.remove()
+def shutdown_session(exception):
+    if exception and db_session.is_active:
+        db_session.rollback
+    else:
+        # db_session.commit()
+        pass
+    db_session.close()
 
 
 # おまじない
 if __name__ == "__main__":
-    init_db()
+    # init_db()
     app.run()
