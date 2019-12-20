@@ -2,6 +2,10 @@ from graphene_sqlalchemy import SQLAlchemyObjectType
 from database.model_planet import ModelPlanet
 import graphene
 
+from datetime import datetime
+from database.base import db_session
+import utils
+
 
 # Create a generic class to mutualize description of planet attributes for both queries and mutations
 class PlanetAttribute:
@@ -23,3 +27,53 @@ class Planet(SQLAlchemyObjectType, PlanetAttribute):
     class Meta:
         model = ModelPlanet
         interfaces = (graphene.relay.Node,)
+
+
+class CreatePlanetInput(graphene.InputObjectType, PlanetAttribute):
+    """Arguments to create a planet"""
+
+
+class CreatePlanet(graphene.Mutation):
+    """Mutation to create a planet"""
+
+    planet = graphene.Field(
+        lambda: Planet, description="Planets created by this mutations."
+    )
+
+    class Arguments:
+        input = CreatePlanetInput(required=True)
+
+    def mutate(self, info, input):
+        data = utils.input_to_dictionary(input)
+        data["created"] = datetime.utcnow()
+        data["edited"] = datetime.utcnow()
+
+        planet = ModelPlanet(**data)
+        db_session.add(planet)
+        db_session.commit()
+
+        return CreatePlanet(planet=planet)
+
+
+class UpdatePlanetInput(graphene.InputObjectType, PlanetAttribute):
+    """Arguments to update a planet."""
+    id = graphene.ID(required=True, description="Global Id of the planet.")
+
+
+class UpdatePlanet(graphene.Mutation):
+    """Update a planet."""
+    planet = graphene.Field(lambda: Planet, description="Person updated by this mutation.")
+
+    class Arguments:
+        input = UpdatePlanetInput(required=True)
+
+    def mutate(self, info, input):
+        data = utils.input_to_dictionary(input)
+        data['edited'] = datetime.utcnow()
+
+        planet = db_session.query(ModelPlanet).filter_by(id=data['id'])
+        planet.update(input)
+        db_session.commit()
+        planet = db_session.query(ModelPlanet).filter_by(id=data['id']).first()
+
+        return UpdatePlanet(planet=planet)

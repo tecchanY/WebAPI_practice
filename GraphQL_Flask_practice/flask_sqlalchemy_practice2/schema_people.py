@@ -50,15 +50,36 @@ class CreatePerson(graphene.Mutation):
         data["created"] = datetime.utcnow()
         data["edited"] = datetime.utcnow()
 
-        person = ModelPeople(**data)
+        person = ModelPeople(**data)  # タプル型のデータとして格納
         db_session.add(person)
         db_session.commit()
 
         return CreatePerson(person=person)
 
+
 class UpdatePersonInput(graphene.InputObjectType, PeopleAttribute):
     """"Arguments to update a person"""
+
     id = graphene.ID(required=True, description="Global Id of the person")
+
 
 class UpdatePerson(graphene.Mutation):
     """Update a person."""
+
+    person = graphene.Field(
+        lambda: People, description="Person updated by this mutation."
+    )
+
+    class Arguments:
+        input = UpdatePersonInput(required=True)
+
+    def mutate(self, info, input):
+        data = utils.input_to_dictionary(input)
+        data["edited"] = datetime.utcnow()
+
+        person = db_session.query(ModelPeople).filter_by(id=data["id"])
+        person.update(data)
+        db_session.commit()
+        person = db_session.query(ModelPeople).filter_by(id=data["id"]).first()
+
+        return UpdatePerson(person=person)

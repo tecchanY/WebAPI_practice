@@ -1,8 +1,8 @@
 from flask import Flask
 from flask_graphql import GraphQLView
 
-from models import db_session
-from schema import schema
+from .models import db_session, Base, engine
+from .schema import schema
 
 # 今回のファイル構成ではコマンドラインから直接このファイルが呼ばれるのではなく、
 # import文で他のプログラムから参照されるため、__name__には参照元のファイル名が格納される。
@@ -12,22 +12,6 @@ from schema import schema
 app = Flask(__name__)
 app.debug = True
 
-example_query = """
-{
-    allEmployees{
-        edges{
-            node{
-                id
-                name
-                department{
-                    id
-                    name
-                }
-            }
-        }
-    }
-}
-"""
 
 # apiと対話するための唯一のエンドポイント（URL）を指定
 app.add_url_rule(
@@ -48,4 +32,7 @@ def shutdown_session(exception):
 # おまじない
 if __name__ == "__main__":
     # init_db()
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
     app.run()

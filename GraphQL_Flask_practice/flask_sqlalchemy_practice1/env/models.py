@@ -1,5 +1,5 @@
-from sqlalchemy import *
-from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
+from sqlalchemy import create_engine, Column, ForeignKey, Integer, String, DateTime, func
+from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -22,31 +22,39 @@ engine = create_engine(
 # scoped_sessionは同じスレッドで何度Session()コンストラクタを呼び出しても同じSessionインスタンスが返ってくる
 
 # sessionmakerの引数にexpire_on_commit=Falseにすると？？？
-db_session = scoped_session(sessionmaker(autocommit=False, autoflush=True, bind=engine))
+db_session = scoped_session(sessionmaker(
+    autocommit=False, autoflush=True, bind=engine))
 
 # ベースクラス作成
 # 宣言クラスの定義のためにベースクラスを構築する。
 # 新しいベースクラスでは、適切なクラスオブジェクトと、クラスとサブクラスを
 # 明示的に提供する情報を元にした適切なORMを生成するメタクラスを提供する。
 Base = declarative_base()
+
+Base.metadata.bind = engine
+
 # セッションのデフォルトで設定済みのクエリクラスのインスタンスを生成
 Base.query = db_session.query_property()
 
 # テーブル定義用クラス
-class Department(Base):
+
+
+class ModelDepartment(Base):
     __tablename__ = "department"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
+    id = Column("id", Integer, primary_key=True)
+    name = Column("name", String)
 
 
-class Employee(Base):
+class ModelEmployee(Base):
     __tablename__ = "employee"
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    hired_on = Column(DateTime, default=func.now())
-    department_id = Column(Integer, ForeignKey("department.id"))
-    department = relationship(
-        Department, backref=backref("employees", uselist=True, cascade="delete,all")
+    id = Column("id", Integer, primary_key=True)
+    name = Column("name", String)
+    hired_on = Column("hired_on", DateTime, default=func.now())
+    department_id = Column("department_id", Integer,
+                           ForeignKey("department.id"))
+
+    departmentList = relationship(
+        ModelDepartment, backref="employee"
     )
 
 

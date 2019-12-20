@@ -13,7 +13,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-
+# ファイルがimportされた際にプログラムが動かないようにするためにif文を記述
 if __name__ == "__main__":
     # def init_db():
     log.info("Drop and Create database {}".format(base.db_name))
